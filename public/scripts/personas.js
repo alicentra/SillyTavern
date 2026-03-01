@@ -648,17 +648,21 @@ export function setPersonaDescription() {
     const descriptor = power_user.persona_descriptions[user_avatar];
     const useAlias = descriptor?.use_alias ?? false;
     let alias = descriptor?.alias ?? '';
+    const personaName = power_user.personas[user_avatar] || '';
 
     // If alias is enabled but empty, default to persona name
     if (useAlias && !alias) {
-        alias = power_user.personas[user_avatar] || '';
+        alias = personaName;
         if (descriptor) {
             descriptor.alias = alias;
         }
     }
 
     $('#persona_use_alias').prop('checked', useAlias);
-    $('#persona_alias_textbox').val(alias).prop('disabled', !useAlias);
+    $('#persona_alias_textbox')
+        .val(alias)
+        .prop('disabled', !useAlias)
+        .attr('placeholder', personaName);
 
     countPersonaDescriptionTokens();
 
@@ -1301,6 +1305,9 @@ function onPersonaUseAliasCheckboxChange() {
 
         // Enable/disable the textbox based on checkbox state
         $('#persona_alias_textbox').prop('disabled', !object.use_alias);
+        
+        // Always show persona name as placeholder for consistency
+        $('#persona_alias_textbox').attr('placeholder', power_user.personas[user_avatar] || '');
     }
 
     saveSettingsDebounced();
