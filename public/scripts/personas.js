@@ -1305,7 +1305,7 @@ function onPersonaUseAliasCheckboxChange() {
 
         // Enable/disable the textbox based on checkbox state
         $('#persona_alias_textbox').prop('disabled', !object.use_alias);
-        
+
         // Always show persona name as placeholder for consistency
         $('#persona_alias_textbox').attr('placeholder', power_user.personas[user_avatar] || '');
     }
