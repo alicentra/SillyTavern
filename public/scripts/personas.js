@@ -475,8 +475,8 @@ export function initPersona(avatarId, personaName, personaDescription, personaTi
         role: DEFAULT_ROLE,
         lorebook: '',
         title: personaTitle || '',
-        use_alias: false,  // Whether to display the alias instead of the persona name in chat
-        alias: '',         // Custom display name to use in chat when use_alias is true
+        use_alias: false,
+        alias: '',
     };
 
     saveSettingsDebounced();
@@ -590,22 +590,10 @@ export function setPersonaDescription() {
     // Load alias settings
     const descriptor = power_user.persona_descriptions[user_avatar];
     const useAlias = descriptor?.use_alias ?? false;
-    let alias = descriptor?.alias ?? '';
-    const personaName = power_user.personas[user_avatar] || '';
-
-    // If alias is enabled but empty, default to persona name
-    if (useAlias && !alias) {
-        alias = personaName;
-        if (descriptor) {
-            descriptor.alias = alias;
-        }
-    }
+    const alias = descriptor?.alias ?? '';
 
     $('#persona_use_alias').prop('checked', useAlias);
-    $('#persona_alias_textbox')
-        .val(alias)
-        .prop('disabled', !useAlias)
-        .attr('placeholder', personaName);
+    $('#persona_alias_textbox').val(alias).prop('disabled', !useAlias);
 
     countPersonaDescriptionTokens();
 
@@ -1203,17 +1191,8 @@ function onPersonaUseAliasCheckboxChange() {
         const object = getOrCreatePersonaDescriptor();
         object.use_alias = !!$('#persona_use_alias').prop('checked');
 
-        // If enabling alias and textbox is empty, populate with persona name
-        if (object.use_alias && !object.alias) {
-            object.alias = power_user.personas[user_avatar];
-            $('#persona_alias_textbox').val(object.alias);
-        }
-
         // Enable/disable the textbox based on checkbox state
         $('#persona_alias_textbox').prop('disabled', !object.use_alias);
-
-        // Always show persona name as placeholder for consistency
-        $('#persona_alias_textbox').attr('placeholder', power_user.personas[user_avatar] || '');
     }
 
     saveSettingsDebounced();
