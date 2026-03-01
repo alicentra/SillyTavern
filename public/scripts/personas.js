@@ -527,8 +527,8 @@ export async function initPersona(avatarId, personaName, personaDescription, per
         role: role,
         lorebook: lorebook,
         title: personaTitle || '',
-        use_alias: false,
-        alias: '',
+        use_alias: false,  // Whether to display the alias instead of the persona name in chat
+        alias: '',         // Custom display name to use in chat when use_alias is true
     };
 
     saveSettingsDebounced();
@@ -647,7 +647,15 @@ export function setPersonaDescription() {
     // Load alias settings
     const descriptor = power_user.persona_descriptions[user_avatar];
     const useAlias = descriptor?.use_alias ?? false;
-    const alias = descriptor?.alias ?? '';
+    let alias = descriptor?.alias ?? '';
+
+    // If alias is enabled but empty, default to persona name
+    if (useAlias && !alias) {
+        alias = power_user.personas[user_avatar] || '';
+        if (descriptor) {
+            descriptor.alias = alias;
+        }
+    }
 
     $('#persona_use_alias').prop('checked', useAlias);
     $('#persona_alias_textbox').val(alias).prop('disabled', !useAlias);
@@ -1284,6 +1292,12 @@ function onPersonaUseAliasCheckboxChange() {
     if (power_user.personas[user_avatar]) {
         const object = getOrCreatePersonaDescriptor();
         object.use_alias = !!$('#persona_use_alias').prop('checked');
+
+        // If enabling alias and textbox is empty, populate with persona name
+        if (object.use_alias && !object.alias) {
+            object.alias = power_user.personas[user_avatar];
+            $('#persona_alias_textbox').val(object.alias);
+        }
 
         // Enable/disable the textbox based on checkbox state
         $('#persona_alias_textbox').prop('disabled', !object.use_alias);
