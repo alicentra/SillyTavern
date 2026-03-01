@@ -527,6 +527,8 @@ export async function initPersona(avatarId, personaName, personaDescription, per
         role: role,
         lorebook: lorebook,
         title: personaTitle || '',
+        use_alias: false,
+        alias: '',
     };
 
     saveSettingsDebounced();
@@ -588,6 +590,8 @@ export async function convertCharacterToPersona(characterId = null) {
         role: DEFAULT_ROLE,
         lorebook: '',
         title: '',
+        use_alias: false,
+        alias: '',
     };
 
     // If the user is currently using this persona, update the description
@@ -639,6 +643,15 @@ export function setPersonaDescription() {
         .find(`option[value="${power_user.persona_description_role}"]`)
         .prop('selected', String(true));
     $('#persona_lore_button').toggleClass('world_set', !!power_user.persona_description_lorebook);
+
+    // Load alias settings
+    const descriptor = power_user.persona_descriptions[user_avatar];
+    const useAlias = descriptor?.use_alias ?? false;
+    const alias = descriptor?.alias ?? '';
+
+    $('#persona_use_alias').prop('checked', useAlias);
+    $('#persona_alias_textbox').val(alias).prop('disabled', !useAlias);
+
     countPersonaDescriptionTokens();
 
     updatePersonaUIStates();
@@ -926,6 +939,8 @@ async function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
                 lorebook: '',
                 connections: [],
                 title: '',
+                use_alias: false,
+                alias: '',
             };
         }
 
@@ -1074,6 +1089,8 @@ async function lockPersona(type = 'chat') {
             lorebook: '',
             connections: [],
             title: '',
+            use_alias: false,
+            alias: '',
         };
         await eventSource.emit(event_types.PERSONA_CREATED, { avatarId: user_avatar, name: name1, description: '', title: '' });
     }
@@ -1258,6 +1275,27 @@ async function onPersonaDescriptionDepthRoleInput() {
         saveSettingsDebounced();
         await eventSource.emit(event_types.PERSONA_UPDATED, user_avatar);
         return;
+    }
+
+    saveSettingsDebounced();
+}
+
+function onPersonaUseAliasCheckboxChange() {
+    if (power_user.personas[user_avatar]) {
+        const object = getOrCreatePersonaDescriptor();
+        object.use_alias = !!$('#persona_use_alias').prop('checked');
+
+        // Enable/disable the textbox based on checkbox state
+        $('#persona_alias_textbox').prop('disabled', !object.use_alias);
+    }
+
+    saveSettingsDebounced();
+}
+
+function onPersonaAliasTextboxInput() {
+    if (power_user.personas[user_avatar]) {
+        const object = getOrCreatePersonaDescriptor();
+        object.alias = String($('#persona_alias_textbox').val());
     }
 
     saveSettingsDebounced();
@@ -1920,6 +1958,8 @@ async function duplicatePersona(avatarId, { silent = false, select = false } = {
         role: descriptor?.role ?? DEFAULT_ROLE,
         lorebook: descriptor?.lorebook ?? '',
         title: descriptor?.title ?? '',
+        use_alias: descriptor?.use_alias ?? false,
+        alias: descriptor?.alias ?? '',
     };
 
     await uploadUserAvatar(getUserAvatar(avatarId), newAvatarId);
@@ -2928,6 +2968,8 @@ export async function initPersonas() {
     $('#persona_description_position').on('input', onPersonaDescriptionPositionInput);
     $('#persona_depth_value').on('input', onPersonaDescriptionDepthValueInput);
     $('#persona_depth_role').on('input', onPersonaDescriptionDepthRoleInput);
+    $('#persona_use_alias').on('change', onPersonaUseAliasCheckboxChange);
+    $('#persona_alias_textbox').on('input', onPersonaAliasTextboxInput);
     $('#persona_lore_button').on('click', onPersonaLoreButtonClick);
     addLongPressEvent('#persona_lore_button', function () {
         onPersonaLoreButtonClick({ shiftKey: true, altKey: false });
