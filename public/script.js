@@ -11131,6 +11131,29 @@ jQuery(async function () {
     };
     chatElementScroll.addEventListener('scroll', chatScrollHandler, { passive: true });
 
+    // Auto-scroll when any content is added to the chat (including extension-generated content)
+    const scrollOnChatMutation = debounce(() => {
+        scrollChatToBottom({ waitForFrame: true });
+    }, debounce_timeout.quick);
+
+    const chatMutationObserver = new MutationObserver((mutations) => {
+        // Only trigger scroll if content was added (not just attribute changes)
+        const hasContentChange = mutations.some(mutation => 
+            mutation.type === 'childList' || mutation.type === 'characterData'
+        );
+        if (hasContentChange) {
+            scrollOnChatMutation();
+        }
+    });
+
+    // Watch for child nodes being added/removed or text content changes
+    chatMutationObserver.observe(chatElementScroll, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        characterDataOldValue: false,
+    });
+
     $(document).on('click', '.mes', function () {
         //when a 'delete message' parent div is clicked
         // and we are in delete mode and del_checkbox is visible
