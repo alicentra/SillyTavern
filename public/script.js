@@ -11191,7 +11191,7 @@ jQuery(async function () {
 
     const chatMutationObserver = new MutationObserver((mutations) => {
         // Only trigger scroll if content was added (not just attribute changes)
-        const hasContentChange = mutations.some(mutation => 
+        const hasContentChange = mutations.some(mutation =>
             mutation.type === 'childList' || mutation.type === 'characterData'
         );
         if (hasContentChange) {
