@@ -124,7 +124,6 @@ export async function setUserAvatar(imgfile, { toastPersonaNameChange = true, na
     await retriggerFirstMessageOnEmptyChat();
     saveSettingsDebounced();
     $('.zoomed_avatar[forchar]').remove();
-    await eventSource.emit(event_types.PERSONA_CHANGED, user_avatar);
 }
 
 function reloadUserAvatar(force = false) {
@@ -475,8 +474,6 @@ export function initPersona(avatarId, personaName, personaDescription, personaTi
         role: DEFAULT_ROLE,
         lorebook: '',
         title: personaTitle || '',
-        use_alias: false,  // Whether to display the alias instead of the persona name in chat
-        alias: '',         // Custom display name to use in chat when use_alias is true
     };
 
     saveSettingsDebounced();
@@ -534,8 +531,6 @@ export async function convertCharacterToPersona(characterId = null) {
         role: DEFAULT_ROLE,
         lorebook: '',
         title: '',
-        use_alias: false,
-        alias: '',
     };
 
     // If the user is currently using this persona, update the description
@@ -586,27 +581,6 @@ export function setPersonaDescription() {
         .find(`option[value="${power_user.persona_description_role}"]`)
         .prop('selected', String(true));
     $('#persona_lore_button').toggleClass('world_set', !!power_user.persona_description_lorebook);
-
-    // Load alias settings
-    const descriptor = power_user.persona_descriptions[user_avatar];
-    const useAlias = descriptor?.use_alias ?? false;
-    let alias = descriptor?.alias ?? '';
-    const personaName = power_user.personas[user_avatar] || '';
-
-    // If alias is enabled but empty, default to persona name
-    if (useAlias && !alias) {
-        alias = personaName;
-        if (descriptor) {
-            descriptor.alias = alias;
-        }
-    }
-
-    $('#persona_use_alias').prop('checked', useAlias);
-    $('#persona_alias_textbox')
-        .val(alias)
-        .prop('disabled', !useAlias)
-        .attr('placeholder', personaName);
-
     countPersonaDescriptionTokens();
 
     updatePersonaUIStates();
@@ -890,8 +864,6 @@ async function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
                 lorebook: '',
                 connections: [],
                 title: '',
-                use_alias: false,
-                alias: '',
             };
         }
 
@@ -1039,8 +1011,6 @@ async function lockPersona(type = 'chat') {
             lorebook: '',
             connections: [],
             title: '',
-            use_alias: false,
-            alias: '',
         };
     }
 
@@ -1193,36 +1163,6 @@ function onPersonaDescriptionDepthRoleInput() {
     if (power_user.personas[user_avatar]) {
         const object = getOrCreatePersonaDescriptor();
         object.role = power_user.persona_description_role;
-    }
-
-    saveSettingsDebounced();
-}
-
-function onPersonaUseAliasCheckboxChange() {
-    if (power_user.personas[user_avatar]) {
-        const object = getOrCreatePersonaDescriptor();
-        object.use_alias = !!$('#persona_use_alias').prop('checked');
-
-        // If enabling alias and textbox is empty, populate with persona name
-        if (object.use_alias && !object.alias) {
-            object.alias = power_user.personas[user_avatar];
-            $('#persona_alias_textbox').val(object.alias);
-        }
-
-        // Enable/disable the textbox based on checkbox state
-        $('#persona_alias_textbox').prop('disabled', !object.use_alias);
-
-        // Always show persona name as placeholder for consistency
-        $('#persona_alias_textbox').attr('placeholder', power_user.personas[user_avatar] || '');
-    }
-
-    saveSettingsDebounced();
-}
-
-function onPersonaAliasTextboxInput() {
-    if (power_user.personas[user_avatar]) {
-        const object = getOrCreatePersonaDescriptor();
-        object.alias = String($('#persona_alias_textbox').val());
     }
 
     saveSettingsDebounced();
@@ -1612,8 +1552,9 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
             }
             toastr.success(message, t`Persona Auto Selected`, { escapeHtml: false });
         }
-    } else if (chatPersona && power_user.persona_auto_lock && !chat_metadata.persona) {
-        // Even if it's the same persona, we still might need to auto-lock to chat if that's enabled
+    }
+    // Even if it's the same persona, we still might need to auto-lock to chat if that's enabled
+    else if (chatPersona && power_user.persona_auto_lock && !chat_metadata.persona) {
         await lockPersona('chat');
     }
 
@@ -1652,6 +1593,7 @@ export async function showCharConnections() {
         highlightPersonas: true,
         targetedChar: getCurrentConnectionObj(),
         shiftClickHandler: (element, ev) => {
+
             const personaId = $(element).attr('data-pid');
 
             /** @type {PersonaConnection[]} */
@@ -1851,8 +1793,6 @@ async function duplicatePersona(avatarId) {
         role: descriptor?.role ?? DEFAULT_ROLE,
         lorebook: descriptor?.lorebook ?? '',
         title: descriptor?.title ?? '',
-        use_alias: descriptor?.use_alias ?? false,
-        alias: descriptor?.alias ?? '',
     };
 
     await uploadUserAvatar(getUserAvatar(avatarId), newAvatarId);
@@ -1905,6 +1845,7 @@ async function lockPersonaCallback(_args, value) {
     if (isFalseBoolean(value)) {
         await setPersonaLockState(false, type);
         return 'false';
+
     }
 
     return '';
@@ -2027,8 +1968,6 @@ export async function initPersonas() {
     $('#persona_description_position').on('input', onPersonaDescriptionPositionInput);
     $('#persona_depth_value').on('input', onPersonaDescriptionDepthValueInput);
     $('#persona_depth_role').on('input', onPersonaDescriptionDepthRoleInput);
-    $('#persona_use_alias').on('change', onPersonaUseAliasCheckboxChange);
-    $('#persona_alias_textbox').on('input', onPersonaAliasTextboxInput);
     $('#persona_lore_button').on('click', onPersonaLoreButtonClick);
     addLongPressEvent('#persona_lore_button', function () {
         onPersonaLoreButtonClick({ shiftKey: true, altKey: false });
