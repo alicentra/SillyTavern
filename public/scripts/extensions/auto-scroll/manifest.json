@@ -1,0 +1,10 @@
+{
+    "display_name": "Auto Scroll",
+    "loading_order": 999,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "author": "GitHub Copilot",
+    "version": "1.0.0",
+    "homePage": "https://github.com/SillyTavern/SillyTavern"
+}
